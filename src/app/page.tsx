@@ -1,103 +1,148 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import Editor from "@monaco-editor/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { OpenAI } from "openai";
+import { useStore } from "@/lib/store";
+import { HistoryPanel } from "@/components/HistoryPanel";
+import Link from "next/link";
+
+const presets = [
+  "Create a glassy login form with avatar and animation",
+  "Create a pricing card with 3 plans and CTA buttons",
+  "Design a dashboard widget with stats and icons",
+  "Build a hero section with image, title and CTA",
+  "Create a minimalist navbar with dropdown"
+];
+
+// Инициализация OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.NEXT_PUBLIC_OPENAI_KEY!,
+  dangerouslyAllowBrowser: true,
+});
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { addHistory, saveComponent } = useStore();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const [code, setCode] = useState<string>(`export default function Component() {
+  return (
+    <div className="p-4 bg-white rounded-xl shadow">
+      <h1 className="text-xl font-bold">Hello, world!</h1>
+    </div>
+  );
+}`);
+  const [prompt, setPrompt] = useState("Create a modern login form with Tailwind");
+  const [loading, setLoading] = useState(false);
+
+  async function generateCode() {
+    if (!prompt.trim()) return;
+    setLoading(true);
+    try {
+      const res = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a frontend expert. Return only valid React+Tailwind components.",
+          },
+          { role: "user", content: prompt },
+        ],
+      });
+
+      const generated = res.choices[0]?.message?.content || "";
+      setCode(generated);
+      addHistory(generated);
+    } catch (err) {
+      console.error("Ошибка генерации:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function exportCode() {
+    const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "Component.tsx";
+    link.click();
+  }
+
+  function saveCurrentComponent() {
+    const name = prompt("Введите имя компонента:");
+    if (!name) return;
+    saveComponent({
+      name,
+      code,
+      date: new Date().toLocaleString("fr-FR"),
+    });
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-4 p-4 min-h-screen bg-neutral-100 dark:bg-neutral-900 text-black dark:text-white transition-colors">
+      {/* Левая колонка: история */}
+      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow p-4">
+        <HistoryPanel onSelect={setCode} />
+        <Link href="/my-components" className="block mt-4 text-sm underline text-blue-500">
+          Мои компоненты →
+        </Link>
+      </div>
+
+      {/* Центральная колонка: редактор и управление */}
+      <div className="flex flex-col h-full col-span-1">
+        <Editor
+          height="75vh"
+          defaultLanguage="javascript"
+          value={code}
+          onChange={(value) => setCode(value || "")}
+          theme="vs-dark"
+        />
+
+        {/* Пресеты */}
+        <div className="flex flex-wrap gap-2 my-2">
+          {presets.map((p, idx) => (
+            <Button
+              key={idx}
+              variant="outline"
+              size="sm"
+              onClick={() => setPrompt(p)}
+            >
+              {p.slice(0, 40)}...
+            </Button>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        {/* Поле ввода и кнопки */}
+        <div className="space-y-2">
+          <Input
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Что сгенерировать? Например: Create a dashboard card"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={generateCode} disabled={loading}>
+              {loading ? "Генерируется..." : "Сгенерировать компонент"}
+            </Button>
+            <Button variant="secondary" onClick={exportCode}>
+              Экспорт .tsx
+            </Button>
+            <Button variant="outline" onClick={saveCurrentComponent}>
+              Сохранить как компонент
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Правая колонка: предпросмотр */}
+      <div className="bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-xl">
+        <iframe
+          title="preview"
+          sandbox="allow-scripts"
+          className="w-full h-full border rounded-xl min-h-[90vh]"
+          srcDoc={`<html><head><script src='https://cdn.tailwindcss.com'></script></head><body>${code}</body></html>`}
+        />
+      </div>
     </div>
   );
 }
