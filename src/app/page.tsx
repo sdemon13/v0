@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { OpenAI } from "openai";
 import { useStore } from "@/lib/store";
 import { HistoryPanel } from "@/components/HistoryPanel";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import Link from "next/link";
 
 const presets = [
@@ -80,69 +81,72 @@ export default function Home() {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-4 p-4 min-h-screen bg-neutral-100 dark:bg-neutral-900 text-black dark:text-white transition-colors">
-      {/* Левая колонка: история */}
-      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow p-4">
-        <HistoryPanel onSelect={setCode} />
-        <Link href="/my-components" className="block mt-4 text-sm underline text-blue-500">
-          Мои компоненты →
-        </Link>
-      </div>
-
-      {/* Центральная колонка: редактор и управление */}
-      <div className="flex flex-col h-full col-span-1">
-        <Editor
-          height="75vh"
-          defaultLanguage="javascript"
-          value={code}
-          onChange={(value) => setCode(value || "")}
-          theme="vs-dark"
-        />
-
-        {/* Пресеты */}
-        <div className="flex flex-wrap gap-2 my-2">
-          {presets.map((p, idx) => (
-            <Button
-              key={idx}
-              variant="outline"
-              size="sm"
-              onClick={() => setPrompt(p)}
-            >
-              {p.slice(0, 40)}...
-            </Button>
-          ))}
+    <>
+      <ThemeToggle />
+      <div className="grid grid-cols-3 gap-4 p-4 min-h-screen bg-neutral-100 dark:bg-neutral-900 text-black dark:text-white transition-colors">
+        {/* Левая колонка: история */}
+        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow p-4">
+          <HistoryPanel onSelect={setCode} />
+          <Link href="/my-components" className="block mt-4 text-sm underline text-blue-500">
+            Мои компоненты →
+          </Link>
         </div>
 
-        {/* Поле ввода и кнопки */}
-        <div className="space-y-2">
-          <Input
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Что сгенерировать? Например: Create a dashboard card"
+        {/* Центральная колонка: редактор и управление */}
+        <div className="flex flex-col h-full col-span-1">
+          <Editor
+            height="75vh"
+            defaultLanguage="javascript"
+            value={code}
+            onChange={(value) => setCode(value || "")}
+            theme="vs-dark"
           />
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={generateCode} disabled={loading}>
-              {loading ? "Генерируется..." : "Сгенерировать компонент"}
-            </Button>
-            <Button variant="secondary" onClick={exportCode}>
-              Экспорт .tsx
-            </Button>
-            <Button variant="outline" onClick={saveCurrentComponent}>
-              Сохранить как компонент
-            </Button>
+
+          {/* Пресеты */}
+          <div className="flex flex-wrap gap-2 my-2">
+            {presets.map((p, idx) => (
+              <Button
+                key={idx}
+                variant="outline"
+                size="sm"
+                onClick={() => setPrompt(p)}
+              >
+                {p.slice(0, 40)}...
+              </Button>
+            ))}
+          </div>
+
+          {/* Поле ввода и кнопки */}
+          <div className="space-y-2">
+            <Input
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Что сгенерировать? Например: Create a dashboard card"
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={generateCode} disabled={loading}>
+                {loading ? "Генерируется..." : "Сгенерировать компонент"}
+              </Button>
+              <Button variant="secondary" onClick={exportCode}>
+                Экспорт .tsx
+              </Button>
+              <Button variant="outline" onClick={saveCurrentComponent}>
+                Сохранить как компонент
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Правая колонка: предпросмотр */}
-      <div className="bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-xl">
-        <iframe
-          title="preview"
-          sandbox="allow-scripts"
-          className="w-full h-full border rounded-xl min-h-[90vh]"
-          srcDoc={`<html><head><script src='https://cdn.tailwindcss.com'></script></head><body>${code}</body></html>`}
-        />
+        {/* Правая колонка: предпросмотр */}
+        <div className="bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-xl">
+          <iframe
+            title="preview"
+            sandbox="allow-scripts"
+            className="w-full h-full border rounded-xl min-h-[90vh]"
+            srcDoc={`<html><head><script src='https://cdn.tailwindcss.com'></script></head><body>${code}</body></html>`}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 }

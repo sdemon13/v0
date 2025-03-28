@@ -1,19 +1,8 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Inter } from "next/font/google";
+import type { Metadata } from "next";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "v0-clone",
@@ -22,33 +11,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("theme") === "dark";
-    setDark(saved);
-    document.documentElement.classList.toggle("dark", saved);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("theme", dark ? "dark" : "light");
-    document.documentElement.classList.toggle("dark", dark);
-  }, [dark]);
-
+}) {
   return (
     <html lang="en">
-      <body
-        className={`bg-neutral-100 dark:bg-neutral-900 text-black dark:text-white transition-colors ${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <button
-          onClick={() => setDark(!dark)}
-          className="absolute top-4 right-4 z-50 px-3 py-1 text-xs border rounded bg-white dark:bg-neutral-800"
-        >
-          {dark ? "🌞 Light" : "🌙 Dark"}
-        </button>
+      <body className={`${inter.className} bg-neutral-100 text-black dark:bg-neutral-900 dark:text-white transition-colors`}>
         {children}
       </body>
     </html>
